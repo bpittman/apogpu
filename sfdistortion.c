@@ -31,6 +31,7 @@
 */
 
 #include	<stdio.h>
+#include	<limits.h>
 
 /* Include this header file to use functions from libsndfile. */
 #include	<sndfile.h>
@@ -43,16 +44,21 @@
 /* libsndfile can handle more than 6 channels but we'll restrict it to 6. */
 #define		MAX_CHANNELS	6
 
+#define DEF_DIST_VAL (INT_MAX * 0.001)
+int dist_val;
+
 /* Function prototype. */
-static void process_data (double *data, int count, int channels) ;
+static void process_data (int *data, int count, int channels) ;
 
 
 int
 main (void)
-{   /* This is a buffer of double precision floating point values
+{   /* This is a buffer of int precision floating point values
     ** which will hold our data while we process it.
     */
-    static double data [BUFFER_LEN] ;
+    static int data [BUFFER_LEN] ;
+
+    dist_val = (int)DEF_DIST_VAL;
 
     /* A SNDFILE is very much like a FILE in the Standard C library. The
     ** sf_open function return an SNDFILE* pointer when they sucessfully
@@ -105,9 +111,9 @@ main (void)
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
     */
-    while ((readcount = sf_read_double (infile, data, BUFFER_LEN)))
+    while ((readcount = sf_read_int (infile, data, BUFFER_LEN)))
     {   process_data (data, readcount, sfinfo.channels) ;
-        sf_write_double (outfile, data, readcount) ;
+        sf_write_int (outfile, data, readcount) ;
         } ;
 
     /* Close input and output files. */
@@ -118,9 +124,9 @@ main (void)
 } /* main */
 
 static void
-process_data (double *data, int count, int channels)
-{	double channel_gain [MAX_CHANNELS] = { 0.5, 0.8, 0.1, 0.4, 0.4, 0.9 } ;
-    int k, chan ;
+process_data (int *data, int count, int channels)
+{
+    int chan, k;
 
     /* Process the data here.
     ** If the soundfile contains more then 1 channel you need to take care of
@@ -129,8 +135,11 @@ process_data (double *data, int count, int channels)
     */
 
     for (chan = 0 ; chan < channels ; chan ++)
-        for (k = chan ; k < count ; k+= channels)
-            data [k] *= channel_gain [chan] ;
+        for (k = chan ; k < count ; k+= channels) {
+            if(data[k] > dist_val) data[k]=dist_val*500;
+            else if(data[k] < -dist_val) data[k]=-dist_val*500;
+            else data[k]*=500;
+        }
 
     return ;
 } /* process_data */
