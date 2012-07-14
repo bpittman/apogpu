@@ -36,16 +36,11 @@
 /* Include this header file to use functions from libsndfile. */
 #include	<sndfile.h>
 
-/*    This will be the length of the buffer used to hold.frames while
-**    we process them.
-*/
-#define		BUFFER_LEN	32768
-
 /* libsndfile can handle more than 6 channels but we'll restrict it to 6. */
 #define		MAX_CHANNELS	6
 
 /* Function prototype. */
-static void process_data (double *data, int count, int channels) ;
+static void process_data (double *data, int count, int channels, int sample_rate) ;
 
 
 int
@@ -53,8 +48,7 @@ main (void)
 {   /* This is a buffer of double precision floating point values
     ** which will hold our data while we process it.
     */
-    static double *data;
-    data = (double*)malloc(sizeof(double)*BUFFER_LEN);
+    static double *data = NULL;
 
     /* A SNDFILE is very much like a FILE in the Standard C library. The
     ** sf_open function return an SNDFILE* pointer when they sucessfully
@@ -68,6 +62,7 @@ main (void)
     */
     SF_INFO		sfinfo ;
     int			readcount ;
+    sf_count_t 		buffer_length;
     const char	*infilename = "input.wav" ;
     const char	*outfilename = "output.wav" ;
 
@@ -91,7 +86,17 @@ main (void)
         /* Print the error message from libsndfile. */
         puts (sf_strerror (NULL)) ;
         return  1 ;
-        } ;
+    } ;
+
+    printf("samplerate: %d\n",sfinfo.samplerate);
+    buffer_length = sfinfo.frames;
+
+    data = (double*)malloc(sizeof(double)*buffer_length);
+    if(data == NULL)
+    {
+        printf("malloc failed!\n");
+        return 1;
+    }
 
     if (sfinfo.channels > MAX_CHANNELS)
     {   printf ("Not able to process more than %d channels\n", MAX_CHANNELS) ;
@@ -107,8 +112,8 @@ main (void)
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
     */
-    while ((readcount = sf_read_double (infile, data, BUFFER_LEN)))
-    {   process_data (data, readcount, sfinfo.channels) ;
+    while ((readcount = sf_read_double (infile, data, buffer_length)))
+    {   process_data (data, readcount, sfinfo.channels, sfinfo.samplerate) ;
         sf_write_double (outfile, data, readcount) ;
         } ;
 
@@ -121,11 +126,11 @@ main (void)
 } /* main */
 
 static void
-process_data (double *data, int count, int channels)
+process_data (double *data, int count, int channels, int sample_rate)
 {
     int k, chan ;
     double decay = 0.5;
-    int delayLength = (int)200*44.1;
+    int delayLength = (int)200*(sample_rate/1000);
 
     /* Process the data here.
     ** If the soundfile contains more then 1 channel you need to take care of
