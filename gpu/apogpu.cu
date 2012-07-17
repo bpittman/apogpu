@@ -15,8 +15,8 @@ int main (int argc, char **argv) {
    SNDFILE *infile, *outfile;
 
    SF_INFO             sfinfo ;
-   int                 readcount ;
-   sf_count_t          buffer_length;
+   int                 readcount,i ;
+   sf_count_t          buffer_length, padded_buffer_length;
    const char  *infilename = "input.wav" ;
    const char  *outfilename = "output.wav" ;
 
@@ -29,7 +29,12 @@ int main (int argc, char **argv) {
    printf("samplerate: %d\n",sfinfo.samplerate);
    buffer_length = sfinfo.frames;
 
-   data = (float*)malloc(sizeof(float)*buffer_length);
+   if(buffer_length % 32 != 0) 
+      padded_buffer_length = buffer_length + (32 - buffer_length % 32);
+   else
+      padded_buffer_length = buffer_length;
+
+   data = (float*)malloc(sizeof(float)*padded_buffer_length);
    if(data == NULL)
    {
       printf("malloc failed!\n");
@@ -57,8 +62,12 @@ int main (int argc, char **argv) {
       return 1;;
    }
 
+   for(i=buffer_length;i<padded_buffer_length;++i) {
+      data[i] = 0.f;
+   }
+
    printf("%f\n",data[0]);
-   gpusetup(data,1,10);
+   gpusetup(data,sfinfo.channels,padded_buffer_length);
    printf("%f\n",data[0]);
 
    sf_write_float (outfile, data, readcount);
