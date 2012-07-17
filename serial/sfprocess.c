@@ -44,7 +44,7 @@
 #define		MAX_CHANNELS	6
 
 /* Function prototype. */
-static void process_data (double *data, int count, int channels) ;
+static void process_data (float *data, int count, int channels) ;
 
 
 int
@@ -52,7 +52,7 @@ main (void)
 {   /* This is a buffer of double precision floating point values
     ** which will hold our data while we process it.
     */
-    static double data [BUFFER_LEN] ;
+    static float data [BUFFER_LEN] ;
 
     /* A SNDFILE is very much like a FILE in the Standard C library. The
     ** sf_open function return an SNDFILE* pointer when they sucessfully
@@ -105,9 +105,9 @@ main (void)
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
     */
-    while ((readcount = sf_read_double (infile, data, BUFFER_LEN)))
+    while ((readcount = sf_read_float (infile, data, BUFFER_LEN)))
     {   process_data (data, readcount, sfinfo.channels) ;
-        sf_write_double (outfile, data, readcount) ;
+        sf_write_float (outfile, data, readcount) ;
         } ;
 
     /* Close input and output files. */
@@ -118,8 +118,8 @@ main (void)
 } /* main */
 
 static void
-process_data (double *data, int count, int channels)
-{	double channel_gain [MAX_CHANNELS] = { 0.5, 0.8, 0.1, 0.4, 0.4, 0.9 } ;
+process_data (float *data, int count, int channels)
+{	float channel_gain [MAX_CHANNELS] = { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 } ;
     int k, chan ;
 
     /* Process the data here.
