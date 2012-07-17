@@ -1,9 +1,15 @@
 cmake_minimum_required (VERSION 2.6)
 project (apogpu)
+
+include_directories(/home/uahcls14/local/include )
+link_directories( /home/uahcls14/local/lib )
+
 add_executable(sfprocess sfprocess.c)
 add_executable(sfdistortion sfdistortion.c)
 add_executable(sfdelay sfdelay.c)
+add_executable(sfcompare sfcompare.c)
 
 target_link_libraries(sfprocess sndfile)
 target_link_libraries(sfdistortion sndfile)
 target_link_libraries(sfdelay sndfile)
+target_link_libraries(sfcompare sndfile)
