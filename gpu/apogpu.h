@@ -1,6 +1,6 @@
 // GPU (Device) Matrix/Matrix Multiplication Prototype
 // gpu_matrixmul.cpp
-void gpusetup(int *data, int channels, int samples);
+void gpusetup(float *data, int channels, int samples);
 
 // prototype for DeviceSelect Routine (util.cu)
 int DeviceSelect(int device_id);

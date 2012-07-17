@@ -1,19 +1,17 @@
 NVCC = nvcc
 INCLUDES = -I/home/uahcls14/local/include
+LIBS = -L/home/uahcls14/local/lib -lsndfile
 
 all: apogpu
 
-apogpu.o: apogpu.cu util.cu
+apogpu.o: apogpu.cu
 	$(NVCC) -c $< ${INCLUDES} -o $@
 
 gpu_apogpu.o: gpu_apogpu.cu
 	$(NVCC) -c $< ${INCLUDES} -o $@
 
-util.o: util.cu
-	$(NVCC) -c $< ${INCLUDES} -o $@
-
-apogpu: apogpu.o gpu_apogpu.o util.o
-	$(NVCC) $^ -o $@
+apogpu: apogpu.o gpu_apogpu.o
+	$(NVCC) $^ -o $@ ${LIBS}
 
 clean:
 	rm -rf *.o apogpu
