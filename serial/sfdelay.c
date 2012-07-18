@@ -32,6 +32,7 @@
 
 #include	<stdio.h>
 #include	<stdlib.h>
+#include	<time.h>
 
 /* Include this header file to use functions from libsndfile. */
 #include	<sndfile.h>
@@ -65,6 +66,7 @@ main (void)
     sf_count_t 		buffer_length;
     const char	*infilename = "input.wav" ;
     const char	*outfilename = "output.wav" ;
+    struct timeval t1, t2;
 
     /* Here's where we open the input file. We pass sf_open the file name and
     ** a pointer to an SF_INFO struct.
@@ -112,10 +114,17 @@ main (void)
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
     */
-    while ((readcount = sf_read_double (infile, data, buffer_length)))
-    {   process_data (data, readcount, sfinfo.channels, sfinfo.samplerate) ;
-        sf_write_double (outfile, data, readcount) ;
-        } ;
+    readcount = sf_read_double (infile, data, buffer_length);
+
+    gettimeofday(&t1, 0);
+
+    process_data (data, readcount, sfinfo.channels, sfinfo.samplerate) ;
+
+    gettimeofday(&t2, 0);
+    double time = (1000000.0*(t2.tv_sec-t1.tv_sec) + t2.tv_usec-t1.tv_usec)/1000000.0;
+    printf("Time to generate:  %f ms \n", time);
+
+    sf_write_double (outfile, data, readcount) ;
 
     /* Close input and output files. */
     sf_close (infile) ;

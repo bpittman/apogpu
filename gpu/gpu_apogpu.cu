@@ -43,8 +43,14 @@ void launchDelayKernel(float* data_d, int channels, int samples, float decay, in
 
 void gpusetup(float *data, int channels, int sample_rate, int samples) {
    float *data_d = NULL;
+   float time;
+   cudaEvent_t start, stop;
 
    printf("frames: %d\n",samples);
+
+   cudaEventCreate(&start);
+   cudaEventCreate(&stop);
+   cudaEventRecord(start, 0);
 
    // Allocate device memory and Transfer host arrays M and N
    cudaMalloc(&data_d, sizeof(float)*samples);
@@ -58,7 +64,13 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
 
    cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost);
 
+   cudaEventRecord(stop, 0);
+   cudaEventSynchronize(stop);
+   cudaEventElapsedTime(&time, start, stop);
+
    printf("gpusetup: %f\n",data[0]);
+
+   printf("Time to generate:  %f ms \n", time);
 
    if(cudaGetLastError() != cudaSuccess) { printf("error!\n"); }
 
