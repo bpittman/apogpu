@@ -1,11 +1,9 @@
- #include "stdio.h"
-
-// printf() is only supported
-// for devices of compute capability 2.0 and higher
+#include <stdio.h>
+#include "apogpu.h"
 
 __global__ void gainKernel(float* data_d) {
    float gain = 0.5f;
-   unsigned int idx = blockIdx.x*32 + threadIdx.x;
+   unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
    data_d[idx] = data_d[idx] * gain;
    return;
 }
@@ -22,8 +20,8 @@ void gpusetup(float *data, int channels, int samples) {
    //cudaMemcpy(data, data_d, samples, cudaMemcpyHostToDevice);
 
    // Stage A:  Setup the kernel execution configuration parameters
-   dim3 dimGrid(samples/32,1,1);
-   dim3 dimBlock(32,1,1);
+   dim3 dimGrid(samples/BLOCK_SIZE,1,1);
+   dim3 dimBlock(BLOCK_SIZE,1,1);
 
    printf("gpusetup: %f\n",data[0]);
 

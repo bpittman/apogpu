@@ -1,3 +1,5 @@
+#define BLOCK_SIZE 32
+
 // GPU (Device) Matrix/Matrix Multiplication Prototype
 // gpu_matrixmul.cpp
 void gpusetup(float *data, int channels, int samples);
@@ -7,5 +9,4 @@ int DeviceSelect(int device_id);
 
 // prototype for DeviceInfo Routine (util.cu)
 void DeviceInfo(int device_id);
-
 

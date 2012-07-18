@@ -29,8 +29,8 @@ int main (int argc, char **argv) {
    printf("samplerate: %d\n",sfinfo.samplerate);
    buffer_length = sfinfo.frames;
 
-   if(buffer_length % 32 != 0) 
-      padded_buffer_length = buffer_length + (32 - buffer_length % 32);
+   if(buffer_length % BLOCK_SIZE != 0) 
+      padded_buffer_length = buffer_length + (BLOCK_SIZE - buffer_length % BLOCK_SIZE);
    else
       padded_buffer_length = buffer_length;
 
