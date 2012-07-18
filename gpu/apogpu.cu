@@ -15,7 +15,7 @@ int main (int argc, char **argv) {
    SNDFILE *infile, *outfile;
 
    SF_INFO             sfinfo ;
-   int                 readcount,i ;
+   int                 readcount, i, sample_rate, channels ;
    sf_count_t          buffer_length, padded_buffer_length;
    const char  *infilename = "input.wav" ;
    const char  *outfilename = "output.wav" ;
@@ -27,7 +27,9 @@ int main (int argc, char **argv) {
    }
 
    printf("samplerate: %d\n",sfinfo.samplerate);
+   sample_rate = sfinfo.samplerate;
    buffer_length = sfinfo.frames;
+   channels = sfinfo.channels;
 
    if(buffer_length % BLOCK_SIZE != 0) 
       padded_buffer_length = buffer_length + (BLOCK_SIZE - buffer_length % BLOCK_SIZE);
@@ -67,7 +69,7 @@ int main (int argc, char **argv) {
    }
 
    printf("%f\n",data[0]);
-   gpusetup(data,sfinfo.channels,padded_buffer_length);
+   gpusetup(data,channels,sample_rate,padded_buffer_length);
    printf("%f\n",data[0]);
 
    sf_write_float (outfile, data, readcount);
