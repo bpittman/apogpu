@@ -6,6 +6,7 @@ sfdelay
 sfdistortion
 sfprocess
 sfcompare
+sfloop
 apogpu
 *.o
 
