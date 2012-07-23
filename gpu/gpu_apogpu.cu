@@ -15,6 +15,10 @@ __global__ void delayKernel(float* data_d, int channels, int samples, float deca
    return;
 }
 
+void cudasafe( cudaError_t error, char* message) {
+   if(error!=cudaSuccess) { fprintf(stderr,"ERROR: %s : %s\n",message,cudaGetErrorString(error)); exit(-1); }
+}
+
 void launchGainKernel(float* data_d, int samples) {
    // Stage A:  Setup the kernel execution configuration parameters
    dim3 dimGrid(samples/BLOCK_SIZE,1,1);
@@ -48,25 +52,25 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
 
    printf("frames: %d\n",samples);
 
-   cudaEventCreate(&start);
-   cudaEventCreate(&stop);
-   cudaEventRecord(start, 0);
+   cudasafe(cudaEventCreate(&start),"cudaEventCreate");
+   cudasafe(cudaEventCreate(&stop),"cudaEventCreate");
+   cudasafe(cudaEventRecord(start, 0),"cudaEventRecord");
 
    // Allocate device memory and Transfer host arrays M and N
-   cudaMalloc(&data_d, sizeof(float)*samples);
+   cudasafe(cudaMalloc(&data_d, sizeof(float)*samples),"cudaMalloc");
 
    printf("gpusetup: %f\n",data[0]);
 
-   cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice);
+   cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
    //launchGainKernel(data_d, samples);
    launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
 
-   cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost);
+   cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
 
-   cudaEventRecord(stop, 0);
-   cudaEventSynchronize(stop);
-   cudaEventElapsedTime(&time, start, stop);
+   cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
+   cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
+   cudasafe(cudaEventElapsedTime(&time, start, stop),"cudaEvenElapsedTime");
 
    printf("gpusetup: %f\n",data[0]);
 
@@ -77,9 +81,9 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    int globalcount=0;
    float decay  = 0.5;
 
-   cudaEventCreate(&start);
-   cudaEventCreate(&stop);
-   cudaEventRecord(start, 0);
+   cudasafe(cudaEventCreate(&start),"cudaEventCreate");
+   cudasafe(cudaEventCreate(&stop),"cudaEventCreate");
+   cudasafe(cudaEventRecord(start, 0),"cudaEventRecord");
 
    for (chan = 0 ; chan < channels ; chan ++) {
       for (k = chan ; k+(delay_length*channels) < samples; k+= channels) {
@@ -88,17 +92,15 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
       }
    }
 
-   cudaEventRecord(stop, 0);
-   cudaEventSynchronize(stop);
-   cudaEventElapsedTime(&time, start, stop);
+   cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
+   cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
+   cudasafe(cudaEventElapsedTime(&time, start, stop),"cudaEvenElapsedTime");
 
    printf("Time to generate (cpu):  %f ms \n", time);
-
-   if(cudaGetLastError() != cudaSuccess) { printf("error!\n"); }
 
    // End of solution Part 3 ============================================
 
 
    // Free device matrices
-   cudaFree(data_d);
+   cudasafe(cudaFree(data_d),"cudaFree");
 }
