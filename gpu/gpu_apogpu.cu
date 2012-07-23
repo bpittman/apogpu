@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include "apogpu.h"
 
+__device__ __constant__ int d_delay_length_x_channels;
+__device__ __constant__ float d_decay;
+__device__ __constant__ int d_samples;
+
 __global__ void gainKernel(float* data_d) {
    float gain = 0.5f;
    unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
@@ -8,10 +12,10 @@ __global__ void gainKernel(float* data_d) {
    return;
 }
 
-__global__ void delayKernel(float* data_d, int channels, int samples, float decay, int delay_length, int base) {
+__global__ void delayKernel(float* data_d, int base) {
    unsigned int idx = base + blockIdx.x*BLOCK_SIZE + threadIdx.x;
-   if(idx >= samples) return;
-   data_d[idx+(delay_length*channels)] += data_d[idx]*decay;
+   if(idx >= d_samples) return;
+   data_d[idx+(d_delay_length_x_channels)] += data_d[idx]*d_decay;
    return;
 }
 
@@ -33,13 +37,18 @@ void launchGainKernel(float* data_d, int samples) {
 
 void launchDelayKernel(float* data_d, int channels, int samples, float decay, int delay_length) {
    int i;
+   int delay_length_x_channels = delay_length*channels;
+   cudasafe(cudaMemcpyToSymbol("d_delay_length_x_channels",&delay_length_x_channels, sizeof(int)),"cudaMemcpyToSymbol");
+   cudasafe(cudaMemcpyToSymbol("d_decay",&decay,sizeof(float)),"cudaMemcpyToSymbol");
+   cudasafe(cudaMemcpyToSymbol("d_samples",&samples,sizeof(int)),"cudaMemcpyToSymbol");
+   
    for(i=0;i<samples;i+=delay_length) {
       // Stage A:  Setup the kernel execution configuration parameters
       dim3 dimGrid(delay_length/BLOCK_SIZE,1,1);
       dim3 dimBlock(BLOCK_SIZE,1,1);
 
       // Stage B: Launch the kernel!! -- using the appropriate function arguments
-      delayKernel<<<dimGrid, dimBlock>>>(data_d, channels, samples, decay, delay_length, i);
+      delayKernel<<<dimGrid, dimBlock>>>(data_d, i);
    }
 
    return;
