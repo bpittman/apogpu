@@ -70,7 +70,29 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
 
    printf("gpusetup: %f\n",data[0]);
 
-   printf("Time to generate:  %f ms \n", time);
+   printf("Time to generate (gpu):  %f ms \n", time);
+
+   int chan,k;
+   int delay_length = 200*(sample_rate/1000);
+   int globalcount=0;
+   float decay  = 0.5;
+
+   cudaEventCreate(&start);
+   cudaEventCreate(&stop);
+   cudaEventRecord(start, 0);
+
+   for (chan = 0 ; chan < channels ; chan ++) {
+      for (k = chan ; k+(delay_length*channels) < samples; k+= channels) {
+         data[k+(delay_length*channels)] += data[k]*decay;
+         globalcount++;
+      }
+   }
+
+   cudaEventRecord(stop, 0);
+   cudaEventSynchronize(stop);
+   cudaEventElapsedTime(&time, start, stop);
+
+   printf("Time to generate (cpu):  %f ms \n", time);
 
    if(cudaGetLastError() != cudaSuccess) { printf("error!\n"); }
 
