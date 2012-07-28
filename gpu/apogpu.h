@@ -1,4 +1,4 @@
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 256
 
 // GPU (Device) Matrix/Matrix Multiplication Prototype
 // gpu_matrixmul.cpp
