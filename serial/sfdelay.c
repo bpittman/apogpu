@@ -41,7 +41,7 @@
 #define		MAX_CHANNELS	6
 
 /* Function prototype. */
-static void process_data (double *data, int count, int channels, int sample_rate) ;
+static void process_data (float *data, int count, int channels, int sample_rate) ;
 
 
 int
@@ -49,7 +49,7 @@ main (void)
 {   /* This is a buffer of double precision floating point values
     ** which will hold our data while we process it.
     */
-    static double *data = NULL;
+    static float *data = NULL;
 
     /* A SNDFILE is very much like a FILE in the Standard C library. The
     ** sf_open function return an SNDFILE* pointer when they sucessfully
@@ -93,7 +93,7 @@ main (void)
     printf("samplerate: %d\n",sfinfo.samplerate);
     buffer_length = sfinfo.frames;
 
-    data = (double*)malloc(sizeof(double)*buffer_length);
+    data = (float*)malloc(sizeof(float)*buffer_length);
     if(data == NULL)
     {
         printf("malloc failed!\n");
@@ -114,7 +114,7 @@ main (void)
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
     */
-    readcount = sf_read_double (infile, data, buffer_length);
+    readcount = sf_read_float (infile, data, buffer_length);
 
     gettimeofday(&t1, 0);
 
@@ -124,7 +124,7 @@ main (void)
     double time = (1000000.0*(t2.tv_sec-t1.tv_sec) + t2.tv_usec-t1.tv_usec)/1000000.0;
     printf("Time to generate:  %f ms \n", time);
 
-    sf_write_double (outfile, data, readcount) ;
+    sf_write_float (outfile, data, readcount) ;
 
     /* Close input and output files. */
     sf_close (infile) ;
@@ -135,10 +135,10 @@ main (void)
 } /* main */
 
 static void
-process_data (double *data, int count, int channels, int sample_rate)
+process_data (float *data, int count, int channels, int sample_rate)
 {
     int k, chan ;
-    double decay = 0.5;
+    float decay = 0.5f;
     int delayLength = (int)200*(sample_rate/1000);
 
     /* Process the data here.
