@@ -12,13 +12,13 @@ __global__ void gainKernel(float* data_d) {
    return;
 }
 
-__global__ void lowPassKernel(float* data_d) {
+__global__ void lowPassKernel(float* data_d, int channels) {
    float h = 0.04f;
    unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
-   if(idx<25) return;
+   if(idx<25*channels) return;
 
    float x = 0;
-   for(int i=0;i<25;++i) {
+   for(int i=0;i<25*channels;i+=channels) {
       x += data_d[idx-i]*h;
    }
    data_d[idx] = x;
@@ -48,13 +48,13 @@ void launchGainKernel(float* data_d, int samples) {
    return;
 }
 
-void launchLowPassKernel(float* data_d, int samples) {
+void launchLowPassKernel(float* data_d, int samples, int channels) {
    // Stage A:  Setup the kernel execution configuration parameters
    dim3 dimGrid(samples/BLOCK_SIZE,1,1);
    dim3 dimBlock(BLOCK_SIZE,1,1);
 
    // Stage B: Launch the kernel!! -- using the appropriate function arguments
-   lowPassKernel<<<dimGrid, dimBlock>>>(data_d);
+   lowPassKernel<<<dimGrid, dimBlock>>>(data_d, channels);
    return;
 }
 
@@ -96,8 +96,8 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
    //launchGainKernel(data_d, samples);
-   //launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
-   launchLowPassKernel(data_d, samples);
+   launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
+   //launchLowPassKernel(data_d, samples, channels);
 
    cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
 

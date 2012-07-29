@@ -27,6 +27,8 @@ int main (int argc, char **argv) {
    }
 
    printf("samplerate: %d\n",sfinfo.samplerate);
+   printf("channels: %d\n",sfinfo.channels);
+
    sample_rate = sfinfo.samplerate;
    buffer_length = sfinfo.frames;
    channels = sfinfo.channels;
