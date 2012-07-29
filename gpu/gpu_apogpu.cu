@@ -12,6 +12,19 @@ __global__ void gainKernel(float* data_d) {
    return;
 }
 
+__global__ void lowPassKernel(float* data_d) {
+   float h = 0.04f;
+   unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
+   if(idx<25) return;
+
+   float x = 0;
+   for(int i=0;i<25;++i) {
+      x += data_d[idx-i]*h;
+   }
+   data_d[idx] = x;
+   return;
+}
+
 __global__ void delayKernel(float* data_d, int base) {
    unsigned int idx = base + blockIdx.x*BLOCK_SIZE + threadIdx.x;
    if(idx >= d_samples) return;
@@ -32,6 +45,16 @@ void launchGainKernel(float* data_d, int samples) {
    gainKernel<<<dimGrid, dimBlock>>>(data_d);
 
 
+   return;
+}
+
+void launchLowPassKernel(float* data_d, int samples) {
+   // Stage A:  Setup the kernel execution configuration parameters
+   dim3 dimGrid(samples/BLOCK_SIZE,1,1);
+   dim3 dimBlock(BLOCK_SIZE,1,1);
+
+   // Stage B: Launch the kernel!! -- using the appropriate function arguments
+   lowPassKernel<<<dimGrid, dimBlock>>>(data_d);
    return;
 }
 
@@ -73,7 +96,8 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
    //launchGainKernel(data_d, samples);
-   launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
+   //launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
+   launchLowPassKernel(data_d, samples);
 
    cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
 
@@ -90,6 +114,7 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    int globalcount=0;
    float decay  = 0.5;
 
+/*
    cudasafe(cudaEventCreate(&start),"cudaEventCreate");
    cudasafe(cudaEventCreate(&stop),"cudaEventCreate");
    cudasafe(cudaEventRecord(start, 0),"cudaEventRecord");
@@ -106,7 +131,7 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    cudasafe(cudaEventElapsedTime(&time, start, stop),"cudaEvenElapsedTime");
 
    printf("Time to generate (cpu):  %f ms \n", time);
-
+*/
    // End of solution Part 3 ============================================
 
 
