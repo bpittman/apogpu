@@ -12,7 +12,7 @@ __global__ void gainKernel(float* data_d) {
    return;
 }
 
-__global__ void lowPassKernel(float* data_d, int channels) {
+__global__ void lowPassKernel(float* data_d, float* results_d, int channels) {
    float h = 0.04f;
    unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
    if(idx<25*channels) return;
@@ -21,7 +21,7 @@ __global__ void lowPassKernel(float* data_d, int channels) {
    for(int i=0;i<25*channels;i+=channels) {
       x += data_d[idx-i]*h;
    }
-   data_d[idx] = x;
+   results_d[idx] = x;
    return;
 }
 
@@ -48,13 +48,13 @@ void launchGainKernel(float* data_d, int samples) {
    return;
 }
 
-void launchLowPassKernel(float* data_d, int samples, int channels) {
+void launchLowPassKernel(float* data_d, float* results_d, int samples, int channels) {
    // Stage A:  Setup the kernel execution configuration parameters
    dim3 dimGrid(samples/BLOCK_SIZE,1,1);
    dim3 dimBlock(BLOCK_SIZE,1,1);
 
    // Stage B: Launch the kernel!! -- using the appropriate function arguments
-   lowPassKernel<<<dimGrid, dimBlock>>>(data_d, channels);
+   lowPassKernel<<<dimGrid, dimBlock>>>(data_d, results_d, channels);
    return;
 }
 
@@ -78,7 +78,7 @@ void launchDelayKernel(float* data_d, int channels, int samples, float decay, in
 }
 
 void gpusetup(float *data, int channels, int sample_rate, int samples) {
-   float *data_d = NULL;
+   float *data_d = NULL, *results_d = NULL;
    float time;
    cudaEvent_t start, stop;
 
@@ -88,18 +88,19 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    cudasafe(cudaEventCreate(&stop),"cudaEventCreate");
    cudasafe(cudaEventRecord(start, 0),"cudaEventRecord");
 
-   // Allocate device memory and Transfer host arrays M and N
    cudasafe(cudaMalloc(&data_d, sizeof(float)*samples),"cudaMalloc");
+   cudasafe(cudaMalloc(&results_d, sizeof(float)*samples),"cudaMalloc");
 
    printf("gpusetup: %f\n",data[0]);
 
    cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
    //launchGainKernel(data_d, samples);
-   launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
-   //launchLowPassKernel(data_d, samples, channels);
+   //launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
+   launchLowPassKernel(data_d, results_d, samples, channels);
 
-   cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
+   //cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
+   cudasafe(cudaMemcpy(data, results_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
 
    cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
    cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
