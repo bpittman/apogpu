@@ -1,4 +1,4 @@
-NVCC = nvcc
+NVCC = nvcc -arch=compute_20
 INCLUDES = -I/home/uahcls14/local/include
 LIBS = -L/home/uahcls14/local/lib -lsndfile
 
