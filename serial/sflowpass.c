@@ -143,7 +143,7 @@ static void
 process_data (float *data, float *results, int count, int channels, int sample_rate)
 {
     unsigned int k, chan, i;
-    float h = 0.04f;
+    float h = 0.03125f;
 
     /* Process the data here.
     ** If the soundfile contains more then 1 channel you need to take care of
@@ -151,9 +151,9 @@ process_data (float *data, float *results, int count, int channels, int sample_r
     */
 
     for(k=0;k<count;++k) {
-        if(k<25*channels) continue;
+        if(k<32*channels) continue;
         float x = 0;
-        for(i=0; i<25*channels; i+=channels) {
+        for(i=0; i<32*channels; i+=channels) {
             x += data[(k-i)]*h;
         }
         results[k] = x;

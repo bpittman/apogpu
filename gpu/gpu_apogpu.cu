@@ -13,12 +13,12 @@ __global__ void gainKernel(float* data_d) {
 }
 
 __global__ void lowPassKernel(float* data_d, float* results_d, int channels) {
-   float h = 0.04f;
+   float h = 0.03125f;
    unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
-   if(idx<25*channels) return;
+   if(idx<32*channels) return;
 
    float x = 0;
-   for(int i=0;i<25*channels;i+=channels) {
+   for(int i=0;i<32*channels;i+=channels) {
       x += data_d[idx-i]*h;
    }
    results_d[idx] = x;
