@@ -13,13 +13,33 @@ __global__ void gainKernel(float* data_d) {
 }
 
 __global__ void lowPassKernel(float* data_d, float* results_d, int channels) {
+   __shared__ float data_s[288];
    float h = 0.03125f;
-   unsigned int idx = blockIdx.x*BLOCK_SIZE + threadIdx.x;
-   if(idx<32*channels) return;
+   unsigned int tidx = threadIdx.x;
+   unsigned int idx = blockIdx.x*BLOCK_SIZE + tidx;
+
+   //load the last 256 entries into shared memory
+   for(int i=0;i<channels;++i) {
+      data_s[(tidx+32)*channels+i] = data_d[(idx*channels)+i];
+   }
+
+   if(idx<32*channels) {
+      __syncthreads();
+      return;
+   }
+
+   //load the first 32 entries into shared memory
+   if(tidx<32) {
+      for(int i=0;i<channels;++i) {
+         data_s[(tidx*channels)+i] = data_d[(idx*channels)+i-32];
+      }
+   }
+
+   __syncthreads();
 
    float x = 0;
    for(int i=0;i<32*channels;i+=channels) {
-      x += data_d[idx-i]*h;
+      x += data_s[tidx-i+32]*h;
    }
    results_d[idx] = x;
    return;
@@ -96,11 +116,11 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
    //launchGainKernel(data_d, samples);
-   launchDelayKernel(data_d, channels, samples, 0.5f, (int)256*(sample_rate/1000));
-   //launchLowPassKernel(data_d, results_d, samples, channels);
+   //launchDelayKernel(data_d, channels, samples, 0.5f, (int)256*(sample_rate/1000));
+   launchLowPassKernel(data_d, results_d, samples, channels);
 
-   cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
-   //cudasafe(cudaMemcpy(data, results_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
+   //cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
+   cudasafe(cudaMemcpy(data, results_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
 
    cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
    cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
