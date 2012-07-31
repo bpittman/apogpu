@@ -139,7 +139,7 @@ process_data (float *data, int count, int channels, int sample_rate)
 {
     int k, chan ;
     float decay = 0.5f;
-    int delayLength = (int)200*(sample_rate/1000);
+    int delayLength = (int)256*(sample_rate/1000);
 
     /* Process the data here.
     ** If the soundfile contains more then 1 channel you need to take care of

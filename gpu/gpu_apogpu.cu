@@ -65,9 +65,9 @@ void launchDelayKernel(float* data_d, int channels, int samples, float decay, in
    cudasafe(cudaMemcpyToSymbol("d_decay",&decay,sizeof(float)),"cudaMemcpyToSymbol");
    cudasafe(cudaMemcpyToSymbol("d_samples",&samples,sizeof(int)),"cudaMemcpyToSymbol");
    
-   for(i=0;i<samples;i+=delay_length) {
+   for(i=0;i<samples;i+=delay_length_x_channels) {
       // Stage A:  Setup the kernel execution configuration parameters
-      dim3 dimGrid(delay_length/BLOCK_SIZE,1,1);
+      dim3 dimGrid(delay_length_x_channels/BLOCK_SIZE,1,1);
       dim3 dimBlock(BLOCK_SIZE,1,1);
 
       // Stage B: Launch the kernel!! -- using the appropriate function arguments
@@ -96,11 +96,11 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
    cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
    //launchGainKernel(data_d, samples);
-   //launchDelayKernel(data_d, channels, samples, 0.5f, (int)200*(sample_rate/1000));
-   launchLowPassKernel(data_d, results_d, samples, channels);
+   launchDelayKernel(data_d, channels, samples, 0.5f, (int)256*(sample_rate/1000));
+   //launchLowPassKernel(data_d, results_d, samples, channels);
 
-   //cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
-   cudasafe(cudaMemcpy(data, results_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
+   cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
+   //cudasafe(cudaMemcpy(data, results_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
 
    cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
    cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
