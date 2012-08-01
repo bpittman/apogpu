@@ -149,12 +149,21 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
 
    printf("Time to generate (gpu):  %f ms \n", time);
 
-   int chan,k;
-   int delay_length = 200*(sample_rate/1000);
+   int chan,k,i;
+   int delay_length = 256*(sample_rate/1000);
    int globalcount=0;
    float decay  = 0.5;
+   float h = 0.03125f;
+   float *results=NULL;
+   float channel_gain = 0.5f;
 
-/*
+   results = (float*)malloc(sizeof(float)*samples);
+   if(results == NULL)
+   {
+      printf("malloc failed!\n");
+      return;
+   }
+
    cudasafe(cudaEventCreate(&start),"cudaEventCreate");
    cudasafe(cudaEventCreate(&stop),"cudaEventCreate");
    cudasafe(cudaEventRecord(start, 0),"cudaEventRecord");
@@ -166,12 +175,29 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
       }
    }
 
+/*
+    for(k=0;k<samples;++k) {
+        if(k<32*channels) continue;
+        float x = 0;
+        for(i=0; i<32*channels; i+=channels) {
+            x += data[(k-i)]*h;
+        }
+        results[k] = x;
+    }
+*/
+/*
+   for (chan = 0 ; chan < channels ; chan ++) {
+      for (k = chan ; k+(delay_length*channels) < samples; k+= channels) {
+         data[k] *= channel_gain;
+      }
+   }
+*/
    cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
    cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
    cudasafe(cudaEventElapsedTime(&time, start, stop),"cudaEvenElapsedTime");
 
    printf("Time to generate (cpu):  %f ms \n", time);
-*/
+
    // End of solution Part 3 ============================================
 
 
