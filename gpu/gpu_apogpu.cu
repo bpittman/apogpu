@@ -13,12 +13,12 @@ __global__ void gainKernel(float* data_d) {
 }
 
 __global__ void lowPassKernel(float* data_d, float* results_d, int channels) {
-   __shared__ float data_s[288];
+   extern __shared__ float data_s[];
    float h = 0.03125f;
    unsigned int tidx = threadIdx.x;
    unsigned int idx = blockIdx.x*BLOCK_SIZE + tidx;
 
-   //load the last 256 entries into shared memory
+   //load the last 256 frames into shared memory
    for(int i=0;i<channels;++i) {
       data_s[(tidx+32)*channels+i] = data_d[(idx*channels)+i];
    }
@@ -28,10 +28,10 @@ __global__ void lowPassKernel(float* data_d, float* results_d, int channels) {
       return;
    }
 
-   //load the first 32 entries into shared memory
+   //load the first 32 frames into shared memory
    if(tidx<32) {
       for(int i=0;i<channels;++i) {
-         data_s[(tidx*channels)+i] = data_d[(idx*channels)+i-32];
+         data_s[(tidx*channels)+i] = data_d[((idx-32)*channels)+i];
       }
    }
 
@@ -39,7 +39,7 @@ __global__ void lowPassKernel(float* data_d, float* results_d, int channels) {
 
    float x = 0;
    for(int i=0;i<32*channels;i+=channels) {
-      x += data_s[tidx-i+32]*h;
+      x += data_s[tidx-i+(32*channels)]*h;
    }
    results_d[idx] = x;
    return;
@@ -77,9 +77,10 @@ void launchLowPassKernel(float* data_d, float* results_d, int samples, int chann
    // Stage A:  Setup the kernel execution configuration parameters
    dim3 dimGrid(samples/BLOCK_SIZE,1,1);
    dim3 dimBlock(BLOCK_SIZE,1,1);
+   int shared_size = ((BLOCK_SIZE+32)*channels)*sizeof(float);
 
    // Stage B: Launch the kernel!! -- using the appropriate function arguments
-   lowPassKernel<<<dimGrid, dimBlock>>>(data_d, results_d, channels);
+   lowPassKernel<<<dimGrid, dimBlock, shared_size>>>(data_d, results_d, channels);
 
    cudaThreadSynchronize();
    cudaError_t error = cudaGetLastError();
