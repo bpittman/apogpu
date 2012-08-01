@@ -91,7 +91,7 @@ main (void)
     } ;
 
     printf("samplerate: %d\n",sfinfo.samplerate);
-    buffer_length = sfinfo.frames;
+    buffer_length = sfinfo.frames*sfinfo.channels;
 
     data = (float*)malloc(sizeof(float)*buffer_length);
     if(data == NULL)
