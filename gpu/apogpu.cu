@@ -30,7 +30,7 @@ int main (int argc, char **argv) {
    printf("channels: %d\n",sfinfo.channels);
 
    sample_rate = sfinfo.samplerate;
-   buffer_length = sfinfo.frames;
+   buffer_length = sfinfo.frames*sfinfo.channels;
    channels = sfinfo.channels;
 
    if(buffer_length % BLOCK_SIZE != 0) 
