@@ -134,8 +134,8 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
 
    cudasafe(cudaMemcpy(data_d, data, sizeof(float)*samples, cudaMemcpyHostToDevice),"cudaMempy");
 
-   //launchGainKernel(data_d, samples);
-   //launchDelayKernel(data_d, channels, samples, 0.5f, (int)256*(sample_rate/1000));
+   launchGainKernel(data_d, samples);
+   launchDelayKernel(data_d, channels, samples, 0.5f, (int)256*(sample_rate/1000));
    launchLowPassKernel(data_d, results_d, samples, channels);
 
    //cudasafe(cudaMemcpy(data, data_d, sizeof(float)*samples, cudaMemcpyDeviceToHost),"cudaMemcpy");
@@ -170,12 +170,17 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
 
    for (chan = 0 ; chan < channels ; chan ++) {
       for (k = chan ; k+(delay_length*channels) < samples; k+= channels) {
+         data[k] *= channel_gain;
+      }
+   }
+
+   for (chan = 0 ; chan < channels ; chan ++) {
+      for (k = chan ; k+(delay_length*channels) < samples; k+= channels) {
          data[k+(delay_length*channels)] += data[k]*decay;
          globalcount++;
       }
    }
 
-/*
     for(k=0;k<samples;++k) {
         if(k<32*channels) continue;
         float x = 0;
@@ -184,14 +189,8 @@ void gpusetup(float *data, int channels, int sample_rate, int samples) {
         }
         results[k] = x;
     }
-*/
-/*
-   for (chan = 0 ; chan < channels ; chan ++) {
-      for (k = chan ; k+(delay_length*channels) < samples; k+= channels) {
-         data[k] *= channel_gain;
-      }
-   }
-*/
+
+
    cudasafe(cudaEventRecord(stop, 0),"cudaEventRecord");
    cudasafe(cudaEventSynchronize(stop),"cudaEventSynchronize");
    cudasafe(cudaEventElapsedTime(&time, start, stop),"cudaEvenElapsedTime");
