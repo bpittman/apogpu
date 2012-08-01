@@ -97,16 +97,19 @@ main (int argc, char** argv)
         return  1 ;
     } ;
 
-    printf("%d %d\n",sfinfo1.frames, sfinfo2.frames);
+    unsigned int file1len = sfinfo1.frames*sfinfo1.channels;
+    unsigned int file2len = sfinfo2.frames*sfinfo2.channels;
 
-    data1 = (float*) malloc(sizeof(float)*sfinfo1.frames);
-    data2 = (float*) malloc(sizeof(float)*sfinfo2.frames);
+    printf("%d %d\n",file1len, file2len);
 
-    readcount = sf_read_float (infile1, data1, sfinfo1.frames);
-    readcount = sf_read_float (infile2, data2, sfinfo2.frames);
+    data1 = (float*) malloc(sizeof(float)*file1len);
+    data2 = (float*) malloc(sizeof(float)*file2len);
 
-    if(sfinfo1.frames < sfinfo2.frames) min = sfinfo1.frames;
-    else min = sfinfo2.frames;
+    readcount = sf_read_float (infile1, data1, file1len);
+    readcount = sf_read_float (infile2, data2, file2len);
+
+    if(file1len < file2len) min = file1len;
+    else min = file2len;
 
     for(i=0;i<min;++i) {
         if(fabs(data1[i]-data2[i]) > 0.0001) {
@@ -114,7 +117,7 @@ main (int argc, char** argv)
         }
     }
 
-    if(sfinfo1.frames != sfinfo2.frames) printf("number of frames differs: %d %d\n",sfinfo1.frames, sfinfo2.frames);
+    if(file1len != file2len) printf("number of frames differs: %d %d\n",sfinfo1.frames, sfinfo2.frames);
 
     /* Close input and output files. */
     sf_close (infile1) ;
