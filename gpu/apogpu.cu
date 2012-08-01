@@ -28,10 +28,15 @@ int main (int argc, char **argv) {
 
    printf("samplerate: %d\n",sfinfo.samplerate);
    printf("channels: %d\n",sfinfo.channels);
+   printf("block size: %d\n",BLOCK_SIZE);
 
    sample_rate = sfinfo.samplerate;
    buffer_length = sfinfo.frames*sfinfo.channels;
    channels = sfinfo.channels;
+
+   if(argc>1) {
+      buffer_length = atoi(argv[1]);
+   }
 
    if(buffer_length % BLOCK_SIZE != 0) 
       padded_buffer_length = buffer_length + (BLOCK_SIZE - buffer_length % BLOCK_SIZE);
