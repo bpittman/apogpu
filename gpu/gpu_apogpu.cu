@@ -64,6 +64,11 @@ void launchGainKernel(float* data_d, int samples) {
    // Stage B: Launch the kernel!! -- using the appropriate function arguments
    gainKernel<<<dimGrid, dimBlock>>>(data_d);
 
+   cudaThreadSynchronize();
+   cudaError_t error = cudaGetLastError();
+   if(error != cudaSuccess) {
+      printf("gainKernel error: %s\n", cudaGetErrorString(error));
+   }
 
    return;
 }
@@ -75,6 +80,13 @@ void launchLowPassKernel(float* data_d, float* results_d, int samples, int chann
 
    // Stage B: Launch the kernel!! -- using the appropriate function arguments
    lowPassKernel<<<dimGrid, dimBlock>>>(data_d, results_d, channels);
+
+   cudaThreadSynchronize();
+   cudaError_t error = cudaGetLastError();
+   if(error != cudaSuccess) {
+      printf("lowPassKernel error: %s\n", cudaGetErrorString(error));
+   }
+
    return;
 }
 
@@ -92,6 +104,12 @@ void launchDelayKernel(float* data_d, int channels, int samples, float decay, in
 
       // Stage B: Launch the kernel!! -- using the appropriate function arguments
       delayKernel<<<dimGrid, dimBlock>>>(data_d, i);
+
+      cudaThreadSynchronize();
+      cudaError_t error = cudaGetLastError();
+      if(error != cudaSuccess) {
+         printf("delayKernel error: %s\n", cudaGetErrorString(error));
+      }
    }
 
    return;
